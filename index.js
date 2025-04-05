@@ -37,17 +37,24 @@ async function main() {
 	
     // Phase 1: Modify file contents
     await modifyVcpkgJson(lowercaseName, projectRoot);
+    console.log("Done modifyVcpkgJson");
     await modifySolutionFile(projectName, projectRoot);
+    console.log("Done modifySolutionFile");
     await modifyFilterFile(projectName, projectRoot);
+    console.log("Done modifyFilterFile");
     await modifyProjectFile(projectName, projectRoot);
+    console.log("Done modifyProjectFile");
 
     // phase 2: global replacement
     await sourceReplace(projectName, projectRoot);
+    console.log("Done sourceReplace");
 
-    await pluginInfoReplace(projectRoot, projectName, projectDesc) 
+    await pluginInfoReplace(projectRoot, projectName, projectDesc);
+    console.log("Done pluginInfoReplace");
     
     // phase 3: rename files (last step)
     await renameFiles(projectName, projectRoot);
+    console.log("Done renameFiles");
     
     console.log(`\nProject successfully renamed to ${projectName}!`);
   } catch (error) {
