@@ -1,6 +1,3 @@
-//import { createInterface } from 'node:readline';
-//import { stdin as input, stdout as output } from 'node:process';
-import { replaceInFile } from 'replace-in-file';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -10,19 +7,11 @@ import { dirname } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Configure paths
+// Configure path
 const projectRoot = path.join(__dirname, '..');
-//const sourceDir = path.join(projectRoot, 'Source');
-//const publicDir = path.join(sourceDir, 'Public');
 
-// // Set up readline interface
-// const rl = readline.createInterface({
-  // input: process.stdin,
-  // output: process.stdout
-// });
-
-// Define logs directory outside the packaged executable
-const logsDir = path.join(projectRoot, 'logs'); // Save logs in the user's home directory
+// Define logs directory
+const logsDir = path.join(projectRoot, 'logs');
 
 // Create logs directory if it doesn't exist
 if (!fs.existsSync(logsDir)) {
@@ -49,24 +38,14 @@ function logMessage(message) {
     });
 }
 
-//const rl = createInterface({ input, output });
-
 // Main function
 async function main() {
   try {
-    const projectName = process.argv[2]; // Will contain the full project name
-    const projectDesc = process.argv[3]; // Will contain the full description with spaces
-    //const [projectName, projectDesc] = process.argv.slice(2);
-    //console.log(projectName, projectDesc, projectRoot);
-	  //const { projectName, projectDesc, projectRoot } = await getUserInput();
-    // const projectRoot = "C:\\Users\\ohmco\\Desktop\\AsaApi.Plugins.Template - Copy"
-    // const projectName = 'TestProject';
-    // const projectDesc = 'A Super simple Plugin that actually works';
-    //const projectName = await getProjectName();
-    const lowercaseName = projectName.toLowerCase();
-	
+    const projectName = process.argv[2];
+    const projectDesc = process.argv[3];
+    
     // Phase 1: Modify file contents
-    await modifyVcpkgJson(lowercaseName);
+    await modifyVcpkgJson(projectName);
     logMessage("Done modifyVcpkgJson");
     await modifySolutionFile(projectName);
     logMessage("Done modifySolutionFile");
@@ -79,9 +58,6 @@ async function main() {
     await sourceReplace(projectName);
     logMessage("Done sourceReplace");
 
-    //await pluginInfoDescReplace(projectDesc);
-    //console.log("Done pluginInfoDescReplace");
-
     await updatePluginInfo(projectName, projectDesc);
     logMessage("Done updatePluginInfo");
     
@@ -92,67 +68,11 @@ async function main() {
     logMessage(`\nProject successfully renamed to ${projectName}!`);
   } catch (error) {
     logMessage('Error:', error.message);
-  } finally {
-    //rl.close();
   }
 }
 
-// not using
-async function getUserInput() {
-  try {
-    // Get project name
-    const projectName = await new Promise((resolve) => {
-      rl.question('Enter Project name (e.g., "Project1"): ', (name) => {
-        resolve(name.trim());
-      });
-    });
-
-    if (!projectName) {
-      throw new Error('Project name cannot be empty!');
-    }
-
-    const projectDesc = await new Promise((resolve) => {
-      rl.question('Enter Project Description: ', (name) => {
-        resolve(name.trim());
-      });
-    });
-
-    // Get project root path
-    const projectRoot = await new Promise((resolve) => {
-      rl.question('Enter project root directory path: ', (rootPath) => {
-        // Remove any surrounding quotes and normalize path
-        const cleanPath = rootPath.trim().replace(/^["']|["']$/g, '');
-        resolve(path.resolve(cleanPath));
-      });
-    });
-
-    // Validate path exists
-    if (!fs.existsSync(projectRoot)) {
-      throw new Error(`Directory does not exist: ${projectRoot}\n` +
-                     `Please enter the full path without quotes, like: C:\\Users\\name\\Desktop\\Folder Name`);
-    }
-
-    return { projectName, projectDesc, projectRoot };
-  } finally {
-    rl.close();
-  }
-}
-
-// not using
-/*
-async function getProjectName() {
-  const rl = createInterface({ input, output });
-  
-  return new Promise((resolve) => {
-    rl.question('Enter Project name (e.g., "Project1"): ', (name) => {
-      rl.close();
-      resolve(name);
-    });
-  });
-}
-*/
-
-async function modifyVcpkgJson(lowercaseName) {
+async function modifyVcpkgJson(projectName) {
+  const lowercaseName = projectName.toLowerCase();
   const filePath = path.join(projectRoot, 'vcpkg.json');
   if (!fs.existsSync(filePath)) {
     logMessage(`Warning: ${filePath} not found. Skipping...`);
@@ -256,14 +176,6 @@ async function sourceReplace(projectName){
   }
 }
 
-// not using
-async function pluginInfoDescReplaceOld(projectDesc) {
-  const config_path = path.join(projectRoot, 'Configs');
-  //replace description in PluginInfo.json
-  await editFilesInDirectory(config_path, "A Super simple Plugin that actually works", projectDesc);
-  
-}
-
 async function updatePluginInfo(projectName, projectDesc) {
   const pluginInfoPath = path.join(projectRoot, 'Configs', 'PluginInfo.json');
   
@@ -303,30 +215,6 @@ async function updatePluginInfo(projectName, projectDesc) {
     }
   } catch (err) {
     logMessage('Error updating PluginInfo.json:', err.message);
-  }
-}
-
-// has errors try to find new code
-async function globalReplace(projectName) {
-  try {
-    const results = await replaceInFile({
-      files: [
-        projectRoot,
-        path.join(projectRoot, 'Source', '*.h'),
-		path.join(projectRoot, 'Source', '*.cpp'),
-        path.join(projectRoot, 'Source', 'Public','PluginTemplate.h'),
-		path.join(projectRoot, 'Configs', 'PluginInfo.json')
-      ].filter(fs.existsSync),
-      from: /PluginTemplate/g,
-      to: projectName,
-	   countMatches: true,
-	   disableGlobs: false,
-	   allowEmptyPaths: true,
-	   dry: false
-    });
-    logMessage(`Global replacement completed. ${results.length} files processed.`);
-  } catch (error) {
-    logMessage('Error during global replacement:', error);
   }
 }
 
@@ -387,55 +275,6 @@ function replaceLine(content, lineNumber, pattern, replacement) {
     lines[lineNumber - 1] = lines[lineNumber - 1].replace(pattern, replacement);
   }
   return lines.join('\n');
-}
-
-async function editFilesInDirectory1(dirPath, searchString, replaceString) {
-    // Read the contents of the directory
-    fs.readdir(dirPath, (err, files) => {
-        if (err) {
-          return console.error(`Unable to scan directory: ${err}`);
-        }
-
-        // Loop through each file/directory in the current directory
-        files.forEach((file) => {
-            const filePath = path.join(dirPath, file);
-            // Check if the current path is a directory or a file
-            fs.stat(filePath, (err, stats) => {
-                if (err) {
-                    console.error(`Unable to get stats for file: ${filePath} - ${err}`);
-                    return;
-                }
-
-                if (stats.isFile()) {
-                  // If it's a file, read the file content
-                  fs.readFile(filePath, 'utf8', (err, data) => {
-                      if (err) {
-                        console.log(`ERROR: Unable to read file: ${filePath} - ${err}`);
-                          return;
-                      }
-
-                      // Check if the search string exists in the file
-                      if (data.includes(searchString)) {
-                          // Replace the search string with the replace string
-                          const updatedData = data.replace(new RegExp(searchString, 'g'), replaceString);
-
-                          // Write the updated content back to the file
-                          fs.writeFile(filePath, updatedData, 'utf8', (err) => {
-                              if (err) {
-                                  console.error(`ERROR: Unable to write file: ${filePath} - ${err}`);
-                                  return;
-                              }
-                              console.log(`UPDATED: ${filePath}`);
-                          });
-                      } else {
-                          // If the search string is not found, skip the file
-                          console.log(`SKIPPED: ${filePath} (String not found)`);
-                      }
-                  });
-                }
-            });
-        });
-    });
 }
 
 async function editFilesInDirectory(dirPath, searchString, replaceString) {
