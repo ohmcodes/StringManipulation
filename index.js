@@ -26,7 +26,9 @@ const rl = createInterface({ input, output });
 // Main function
 async function main() {
   try {
-    const [projectName, projectDesc] = process.argv.slice(2);
+    const projectName = process.argv[2]; // Will contain the full project name
+    const projectDesc = process.argv[3]; // Will contain the full description with spaces
+    //const [projectName, projectDesc] = process.argv.slice(2);
     //console.log(projectName, projectDesc, projectRoot);
 	  //const { projectName, projectDesc, projectRoot } = await getUserInput();
     // const projectRoot = "C:\\Users\\ohmco\\Desktop\\AsaApi.Plugins.Template - Copy"
