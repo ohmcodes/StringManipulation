@@ -27,7 +27,7 @@ const rl = createInterface({ input, output });
 async function main() {
   try {
     const [projectName, projectDesc] = process.argv.slice(2);
-    console.log(projectName, projectDesc, projectRoot);
+    //console.log(projectName, projectDesc, projectRoot);
 	  //const { projectName, projectDesc, projectRoot } = await getUserInput();
     // const projectRoot = "C:\\Users\\ohmco\\Desktop\\AsaApi.Plugins.Template - Copy"
     // const projectName = 'TestProject';
@@ -36,27 +36,24 @@ async function main() {
     const lowercaseName = projectName.toLowerCase();
 	
     // Phase 1: Modify file contents
-    await modifyVcpkgJson(lowercaseName, projectRoot);
+    await modifyVcpkgJson(lowercaseName);
     console.log("Done modifyVcpkgJson");
-    await modifySolutionFile(projectName, projectRoot);
+    await modifySolutionFile(projectName);
     console.log("Done modifySolutionFile");
-    await modifyFilterFile(projectName, projectRoot);
+    await modifyFilterFile(projectName);
     console.log("Done modifyFilterFile");
-    await modifyProjectFile(projectName, projectRoot);
+    await modifyProjectFile(projectName);
     console.log("Done modifyProjectFile");
 
     // phase 2: global replacement
-    await sourceReplace(projectName, projectRoot);
+    await sourceReplace(projectName);
     console.log("Done sourceReplace");
 
-    await pluginInfoReplace(projectRoot, projectName);
-    console.log("Done pluginInfoReplace");
-
-    await pluginInfoDescReplace(projectRoot, projectDesc);
+    await pluginInfoDescReplace(projectDesc);
     console.log("Done pluginInfoDescReplace");
     
     // phase 3: rename files (last step)
-    await renameFiles(projectName, projectRoot);
+    await renameFiles(projectName);
     console.log("Done renameFiles");
     
     console.log(`\nProject successfully renamed to ${projectName}!`);
@@ -121,7 +118,7 @@ async function getProjectName() {
 }
 */
 
-async function modifyVcpkgJson(lowercaseName, projectRoot) {
+async function modifyVcpkgJson(lowercaseName) {
 	console.log(projectRoot);
   const filePath = path.join(projectRoot, 'vcpkg.json');
   if (!fs.existsSync(filePath)) {
@@ -138,7 +135,7 @@ async function modifyVcpkgJson(lowercaseName, projectRoot) {
   console.log(`Updated vcpkg.json name to ${lowercaseName}`);
 }
 
-async function modifySolutionFile(projectName, projectRoot) {
+async function modifySolutionFile(projectName) {
   const filePath = path.join(projectRoot, 'PluginTemplate.sln');
   if (!fs.existsSync(filePath)) {
     console.warn(`Warning: ${filePath} not found. Skipping...`);
@@ -158,7 +155,7 @@ async function modifySolutionFile(projectName, projectRoot) {
   console.log('Updated PluginTemplate.sln');
 }
 
-async function modifyFilterFile(projectName, projectRoot) {
+async function modifyFilterFile(projectName) {
   const filePath = path.join(projectRoot, 'AsaApi.Plugins.Template.vcxproj.filters');
   if (!fs.existsSync(filePath)) {
     console.warn(`Warning: ${filePath} not found. Skipping...`);
@@ -179,7 +176,7 @@ async function modifyFilterFile(projectName, projectRoot) {
   console.log('Updated AsaApi.Plugins.Template.vcxproj.filters');
 }
 
-async function modifyProjectFile(projectName, projectRoot) {
+async function modifyProjectFile(projectName) {
   const filePath = path.join(projectRoot, 'AsaApi.Plugins.Template.vcxproj');
   if (!fs.existsSync(filePath)) {
     console.warn(`Warning: ${filePath} not found. Skipping...`);
@@ -212,10 +209,11 @@ async function modifyProjectFile(projectName, projectRoot) {
   console.log('Updated AsaApi.Plugins.Template.vcxproj');
 }
 
-async function sourceReplace(projectName, projectRoot){
+async function sourceReplace(projectName){
   const files =[
     path.join(projectRoot, 'Source'),
-    path.join(projectRoot, 'Source', 'Public')
+    path.join(projectRoot, 'Source', 'Public'),
+    path.join(projectRoot, 'Configs')
   ];
 
   for (const file of files) {
@@ -225,12 +223,7 @@ async function sourceReplace(projectName, projectRoot){
   }
 }
 
-async function pluginInfoReplace(projectRoot, projectName) {
-  const config_path = path.join(projectRoot, 'Configs');
-  await editFilesInDirectory(config_path, "PluginTemplate", projectName);
-}
-
-async function pluginInfoDescReplace(projectRoot, projectDesc) {
+async function pluginInfoDescReplace(projectDesc) {
   const config_path = path.join(projectRoot, 'Configs');
   //replace description in PluginInfo.json
   await editFilesInDirectory(config_path, "A Super simple Plugin that actually works", projectDesc);
@@ -238,7 +231,7 @@ async function pluginInfoDescReplace(projectRoot, projectDesc) {
 }
 
 // has errors try to find new code
-async function globalReplace(projectName, projectRoot) {
+async function globalReplace(projectName) {
   try {
     const results = await replaceInFile({
       files: [
@@ -261,7 +254,7 @@ async function globalReplace(projectName, projectRoot) {
   }
 }
 
-async function renameFiles(projectName, projectRoot) {
+async function renameFiles(projectName) {
   try {
     // Rename solution file
     const oldSolutionPath = path.join(projectRoot, 'PluginTemplate.sln');
@@ -320,7 +313,7 @@ function replaceLine(content, lineNumber, pattern, replacement) {
   return lines.join('\n');
 }
 
-async function editFilesInDirectory(dirPath, searchString, replaceString) {
+async function editFilesInDirectory1(dirPath, searchString, replaceString) {
     // Read the contents of the directory
     fs.readdir(dirPath, (err, files) => {
         if (err) {
@@ -337,62 +330,107 @@ async function editFilesInDirectory(dirPath, searchString, replaceString) {
                     return;
                 }
 
-                if (stats.isDirectory()) {
-                    // If it's a directory, recursively call the function
-                    //editFilesInDirectory(filePath, searchString, replaceString);
-                } else if (stats.isFile()) {
-                    // If it's a file, read the file content
-                    fs.readFile(filePath, 'utf8', (err, data) => {
-                        if (err) {
-                          console.log(`ERROR: Unable to read file: ${filePath} - ${err}`);
-                            return;
-                        }
+                if (stats.isFile()) {
+                  // If it's a file, read the file content
+                  fs.readFile(filePath, 'utf8', (err, data) => {
+                      if (err) {
+                        console.log(`ERROR: Unable to read file: ${filePath} - ${err}`);
+                          return;
+                      }
 
-                        // Check if the search string exists in the file
-                        if (data.includes(searchString)) {
-                            // Replace the search string with the replace string
-                            const updatedData = data.replace(new RegExp(searchString, 'g'), replaceString);
+                      // Check if the search string exists in the file
+                      if (data.includes(searchString)) {
+                          // Replace the search string with the replace string
+                          const updatedData = data.replace(new RegExp(searchString, 'g'), replaceString);
 
-                            // Write the updated content back to the file
-                            fs.writeFile(filePath, updatedData, 'utf8', (err) => {
-                                if (err) {
-                                    console.error(`ERROR: Unable to write file: ${filePath} - ${err}`);
-                                    return;
-                                }
-                                console.log(`UPDATED: ${filePath}`);
-                            });
-                        } else {
-                            // If the search string is not found, skip the file
-                            console.log(`SKIPPED: ${filePath} (String not found)`);
-                        }
-                    });
+                          // Write the updated content back to the file
+                          fs.writeFile(filePath, updatedData, 'utf8', (err) => {
+                              if (err) {
+                                  console.error(`ERROR: Unable to write file: ${filePath} - ${err}`);
+                                  return;
+                              }
+                              console.log(`UPDATED: ${filePath}`);
+                          });
+                      } else {
+                          // If the search string is not found, skip the file
+                          console.log(`SKIPPED: ${filePath} (String not found)`);
+                      }
+                  });
                 }
             });
         });
     });
 }
 
+async function editFilesInDirectory(dirPath, searchString, replaceString) {
+  try {
+      const files = await fs.promises.readdir(dirPath);
+      let totalReplacements = 0;
+      let filesModified = 0;
 
+      console.log(`\nProcessing directory: ${dirPath}`);
+      console.log('='.repeat(50));
 
+      // Process each file in parallel
+      await Promise.all(files.map(async (file) => {
+          const filePath = path.join(dirPath, file);
+          const stats = await fs.promises.stat(filePath);
 
+          if (stats.isFile()) {
+              try {
+                  let data = await fs.promises.readFile(filePath, 'utf8');
+                  const matches = data.match(new RegExp(searchString, 'g'));
+                  const matchCount = matches ? matches.length : 0;
 
+                  if (matchCount > 0) {
+                      // Show preview of changes
+                      const lines = data.split('\n');
+                      let changesFound = false;
 
+                      console.log(`\nFile: ${filePath}`);
+                      console.log(`Found ${matchCount} occurrence(s) of "${searchString}"`);
 
+                      // Find and display lines that will be changed
+                      lines.forEach((line, i) => {
+                          if (line.includes(searchString)) {
+                              if (!changesFound) {
+                                  console.log('\nChanges:');
+                                  changesFound = true;
+                              }
+                              console.log(`Line ${i + 1}:`);
+                              console.log(`- ${line.trim()}`);
+                              console.log(`+ ${line.replace(new RegExp(searchString, 'g'), replaceString).trim()}`);
+                              console.log('-'.repeat(40));
+                          }
+                      });
 
+                      // Perform the actual replacement
+                      const updatedData = data.replace(new RegExp(searchString, 'g'), replaceString);
+                      await fs.promises.writeFile(filePath, updatedData, 'utf8');
 
+                      console.log(`✓ Successfully updated ${matchCount} occurrence(s)`);
+                      totalReplacements += matchCount;
+                      filesModified++;
+                  } else {
+                      console.log(`\nFile: ${filePath}`);
+                      console.log('No occurrences found - skipping');
+                  }
+              } catch (err) {
+                  console.error(`\nError processing ${filePath}: ${err.message}`);
+              }
+          }
+      }));
 
+      console.log('\n' + '='.repeat(50));
+      console.log(`\nSummary:`);
+      console.log(`- Files scanned: ${files.length}`);
+      console.log(`- Files modified: ${filesModified}`);
+      console.log(`- Total replacements: ${totalReplacements}`);
 
-
-
-
-
-
-
-
-
-
-
-
+  } catch (err) {
+      console.error(`\nERROR processing directory ${dirPath}: ${err.message}`);
+  }
+}
 
 
 // Execute
