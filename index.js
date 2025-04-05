@@ -7,11 +7,11 @@ import path from 'path';
 //import { dirname } from 'path';
 
 // Add these lines for __dirname equivalent in ESM
-//const __filename = fileURLToPath(import.meta.url);
-//const __dirname = dirname(__filename);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Configure paths
-//const projectRoot = path.join(__dirname, '..');
+const projectRoot = path.join(__dirname, '..');
 //const sourceDir = path.join(projectRoot, 'Source');
 //const publicDir = path.join(sourceDir, 'Public');
 
@@ -26,7 +26,7 @@ const rl = createInterface({ input, output });
 // Main function
 async function main() {
   try {
-    const [projectName, projectDesc, projectRoot] = process.argv.slice(2);
+    const [projectName, projectDesc] = process.argv.slice(2);
     console.log(projectName, projectDesc, projectRoot);
 	  //const { projectName, projectDesc, projectRoot } = await getUserInput();
     // const projectRoot = "C:\\Users\\ohmco\\Desktop\\AsaApi.Plugins.Template - Copy"
