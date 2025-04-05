@@ -3,7 +3,7 @@ import { stdin as input, stdout as output } from 'node:process';
 import { replaceInFile } from 'replace-in-file';
 import fs from 'fs';
 import path from 'path';
-//import { fileURLToPath } from 'url';
+import { fileURLToPath } from 'url';
 //import { dirname } from 'path';
 
 // Add these lines for __dirname equivalent in ESM
