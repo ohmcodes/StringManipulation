@@ -153,7 +153,6 @@ async function getProjectName() {
 */
 
 async function modifyVcpkgJson(lowercaseName) {
-	logMessage(projectRoot);
   const filePath = path.join(projectRoot, 'vcpkg.json');
   if (!fs.existsSync(filePath)) {
     logMessage(`Warning: ${filePath} not found. Skipping...`);
