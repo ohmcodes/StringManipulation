@@ -508,6 +508,5 @@ async function editFilesInDirectory(dirPath, searchString, replaceString) {
   }
 }
 
-
 // Execute
 main();
