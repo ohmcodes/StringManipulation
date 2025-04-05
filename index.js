@@ -227,7 +227,7 @@ async function pluginInfoReplace(projectRoot, projectName, projectDesc) {
   editFilesInDirectory(config_path, "PluginTemplate", projectName);
 
   //replace description in PluginInfo.json
-  editFilesInDirectory(config_path, "A Super simple Plugin that actually works", projectDesc);
+  //editFilesInDirectory(config_path, "A Super simple Plugin that actually works", projectDesc);
   
 }
 
