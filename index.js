@@ -454,7 +454,7 @@ async function editFilesInDirectory(dirPath, searchString, replaceString) {
                       const updatedData = data.replace(new RegExp(searchString, 'g'), replaceString);
                       await fs.promises.writeFile(filePath, updatedData, 'utf8');
 
-                      console.log(`✓ Successfully updated ${matchCount} occurrence(s)`);
+                      console.log(`Successfully updated ${matchCount} occurrence(s)`);
                       totalReplacements += matchCount;
                       filesModified++;
                   } else {
