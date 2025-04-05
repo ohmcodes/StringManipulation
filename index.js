@@ -1,5 +1,5 @@
-import { createInterface } from 'node:readline';
-import { stdin as input, stdout as output } from 'node:process';
+//import { createInterface } from 'node:readline';
+//import { stdin as input, stdout as output } from 'node:process';
 import { replaceInFile } from 'replace-in-file';
 import fs from 'fs';
 import path from 'path';
@@ -21,7 +21,35 @@ const projectRoot = path.join(__dirname, '..');
   // output: process.stdout
 // });
 
-const rl = createInterface({ input, output });
+// Define logs directory outside the packaged executable
+const logsDir = path.join(projectRoot, 'logs'); // Save logs in the user's home directory
+
+// Create logs directory if it doesn't exist
+if (!fs.existsSync(logsDir)) {
+    fs.mkdirSync(logsDir, { recursive: true });
+}
+
+// Generate log file name with current date
+const currentDate = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+const logFilePath = path.join(logsDir, `${currentDate}.log`);
+
+// Function to log messages to the log file and console
+function logMessage(message) {
+    const timestamp = new Date().toISOString();
+    const logEntry = `[${timestamp}] ${message}\n`;
+
+    // Log to console
+    console.log(logEntry.trim());
+
+    // Log to file
+    fs.appendFile(logFilePath, logEntry, (err) => {
+        if (err) {
+            console.error(`Failed to write to log file: ${err}`);
+        }
+    });
+}
+
+//const rl = createInterface({ input, output });
 
 // Main function
 async function main() {
@@ -39,36 +67,37 @@ async function main() {
 	
     // Phase 1: Modify file contents
     await modifyVcpkgJson(lowercaseName);
-    console.log("Done modifyVcpkgJson");
+    logMessage("Done modifyVcpkgJson");
     await modifySolutionFile(projectName);
-    console.log("Done modifySolutionFile");
+    logMessage("Done modifySolutionFile");
     await modifyFilterFile(projectName);
-    console.log("Done modifyFilterFile");
+    logMessage("Done modifyFilterFile");
     await modifyProjectFile(projectName);
-    console.log("Done modifyProjectFile");
+    logMessage("Done modifyProjectFile");
 
     // phase 2: global replacement
     await sourceReplace(projectName);
-    console.log("Done sourceReplace");
+    logMessage("Done sourceReplace");
 
     //await pluginInfoDescReplace(projectDesc);
     //console.log("Done pluginInfoDescReplace");
 
     await updatePluginInfo(projectName, projectDesc);
-    console.log("Done updatePluginInfo");
+    logMessage("Done updatePluginInfo");
     
     // phase 3: rename files (last step)
     await renameFiles(projectName);
-    console.log("Done renameFiles");
+    logMessage("Done renameFiles");
     
-    console.log(`\nProject successfully renamed to ${projectName}!`);
+    logMessage(`\nProject successfully renamed to ${projectName}!`);
   } catch (error) {
-    console.error('Error:', error.message);
+    logMessage('Error:', error.message);
   } finally {
-    rl.close();
+    //rl.close();
   }
 }
 
+// not using
 async function getUserInput() {
   try {
     // Get project name
@@ -124,10 +153,10 @@ async function getProjectName() {
 */
 
 async function modifyVcpkgJson(lowercaseName) {
-	console.log(projectRoot);
+	logMessage(projectRoot);
   const filePath = path.join(projectRoot, 'vcpkg.json');
   if (!fs.existsSync(filePath)) {
-    console.warn(`Warning: ${filePath} not found. Skipping...`);
+    logMessage(`Warning: ${filePath} not found. Skipping...`);
     return;
   }
 
@@ -137,13 +166,13 @@ async function modifyVcpkgJson(lowercaseName) {
     `"name": "asa-api-plugin-${lowercaseName}"`
   );
   fs.writeFileSync(filePath, updated);
-  console.log(`Updated vcpkg.json name to ${lowercaseName}`);
+  logMessage(`Updated vcpkg.json name to ${lowercaseName}`);
 }
 
 async function modifySolutionFile(projectName) {
   const filePath = path.join(projectRoot, 'PluginTemplate.sln');
   if (!fs.existsSync(filePath)) {
-    console.warn(`Warning: ${filePath} not found. Skipping...`);
+    logMessage(`Warning: ${filePath} not found. Skipping...`);
     return;
   }
 
@@ -157,13 +186,13 @@ async function modifySolutionFile(projectName) {
   }
   
   fs.writeFileSync(filePath, lines.join('\n'));
-  console.log('Updated PluginTemplate.sln');
+  logMessage('Updated PluginTemplate.sln');
 }
 
 async function modifyFilterFile(projectName) {
   const filePath = path.join(projectRoot, 'AsaApi.Plugins.Template.vcxproj.filters');
   if (!fs.existsSync(filePath)) {
-    console.warn(`Warning: ${filePath} not found. Skipping...`);
+    logMessage(`Warning: ${filePath} not found. Skipping...`);
     return;
   }
 
@@ -178,13 +207,13 @@ async function modifyFilterFile(projectName) {
     `<ClInclude Include="Source\\Public\\${projectName}.h">`);
   
   fs.writeFileSync(filePath, content);
-  console.log('Updated AsaApi.Plugins.Template.vcxproj.filters');
+  logMessage('Updated AsaApi.Plugins.Template.vcxproj.filters');
 }
 
 async function modifyProjectFile(projectName) {
   const filePath = path.join(projectRoot, 'AsaApi.Plugins.Template.vcxproj');
   if (!fs.existsSync(filePath)) {
-    console.warn(`Warning: ${filePath} not found. Skipping...`);
+    logMessage(`Warning: ${filePath} not found. Skipping...`);
     return;
   }
 
@@ -211,22 +240,24 @@ async function modifyProjectFile(projectName) {
     `ASAAPIPLUGINS${projectName.toUpperCase()}_EXPORTS`);
   
   fs.writeFileSync(filePath, content);
-  console.log('Updated AsaApi.Plugins.Template.vcxproj');
+  logMessage('Updated AsaApi.Plugins.Template.vcxproj');
 }
 
 async function sourceReplace(projectName){
-  const files =[
+  const directories =[
     path.join(projectRoot, 'Source'),
     path.join(projectRoot, 'Source', 'Public')
   ];
 
-  for (const file of files) {
-    if (fs.existsSync(file)) {
-      editFilesInDirectory(file, "PluginTemplate", projectName);
+  for (const dir of directories) {
+    if (fs.existsSync(dir)) {
+      logMessage(`Processing directory: ${dir}`);
+      editFilesInDirectory(dir, "PluginTemplate", projectName);
     }
   }
 }
 
+// not using
 async function pluginInfoDescReplaceOld(projectDesc) {
   const config_path = path.join(projectRoot, 'Configs');
   //replace description in PluginInfo.json
@@ -238,7 +269,7 @@ async function updatePluginInfo(projectName, projectDesc) {
   const pluginInfoPath = path.join(projectRoot, 'Configs', 'PluginInfo.json');
   
   if (!fs.existsSync(pluginInfoPath)) {
-    console.log('PluginInfo.json not found - skipping');
+    logMessage('PluginInfo.json not found - skipping');
     return;
   }
 
@@ -265,14 +296,14 @@ async function updatePluginInfo(projectName, projectDesc) {
         'utf8'
       );
 
-      console.log('Successfully updated PluginInfo.json:');
-      console.log(`- FullName: "${original.FullName}" → "${projectName}"`);
-      console.log(`- Description: "${original.Description}" → "${projectDesc}"`);
+      logMessage('Successfully updated PluginInfo.json:');
+      logMessage(`- FullName: "${original.FullName}" → "${projectName}"`);
+      logMessage(`- Description: "${original.Description}" → "${projectDesc}"`);
     } else {
-      console.log('No changes needed in PluginInfo.json');
+      logMessage('No changes needed in PluginInfo.json');
     }
   } catch (err) {
-    console.error('Error updating PluginInfo.json:', err.message);
+    logMessage('Error updating PluginInfo.json:', err.message);
   }
 }
 
@@ -294,9 +325,9 @@ async function globalReplace(projectName) {
 	   allowEmptyPaths: true,
 	   dry: false
     });
-    console.log(`Global replacement completed. ${results.length} files processed.`);
+    logMessage(`Global replacement completed. ${results.length} files processed.`);
   } catch (error) {
-    console.error('Error during global replacement:', error);
+    logMessage('Error during global replacement:', error);
   }
 }
 
@@ -307,7 +338,7 @@ async function renameFiles(projectName) {
     const newSolutionPath = path.join(projectRoot, `${projectName}.sln`);
     if (fs.existsSync(oldSolutionPath)) {
       fs.renameSync(oldSolutionPath, newSolutionPath);
-      console.log(`Renamed solution file to ${projectName}.sln`);
+      logMessage(`Renamed solution file to ${projectName}.sln`);
     }
 
     // Rename project files
@@ -322,7 +353,7 @@ async function renameFiles(projectName) {
       const newPath = path.join(projectRoot, file.replace('Template', projectName));
       if (fs.existsSync(oldPath)) {
         fs.renameSync(oldPath, newPath);
-        console.log(`Renamed ${file} to ${path.basename(newPath)}`);
+        logMessage(`Renamed ${file} to ${path.basename(newPath)}`);
       }
     }
 
@@ -333,7 +364,7 @@ async function renameFiles(projectName) {
       const newCppPath = path.join(projectRoot, 'Source', `${projectName}.cpp`);
       if (fs.existsSync(oldCppPath)) {
         fs.renameSync(oldCppPath, newCppPath);
-        console.log(`Renamed source file to ${projectName}.cpp`);
+        logMessage(`Renamed source file to ${projectName}.cpp`);
       }
 
       // Rename .h file
@@ -342,12 +373,12 @@ async function renameFiles(projectName) {
         const newHPath = path.join(projectRoot, 'Source', 'Public', `${projectName}.h`);
         if (fs.existsSync(oldHPath)) {
           fs.renameSync(oldHPath, newHPath);
-          console.log(`Renamed header file to ${projectName}.h`);
+          logMessage(`Renamed header file to ${projectName}.h`);
         }
       }
     }
   } catch (error) {
-    console.error('Error during file renaming:', error);
+    logMessage('Error during file renaming:', error);
   }
 }
 
@@ -414,8 +445,8 @@ async function editFilesInDirectory(dirPath, searchString, replaceString) {
       let totalReplacements = 0;
       let filesModified = 0;
 
-      console.log(`\nProcessing directory: ${dirPath}`);
-      console.log('='.repeat(50));
+      logMessage(`\nProcessing directory: ${dirPath}`);
+      logMessage('='.repeat(50));
 
       // Process each file in parallel
       await Promise.all(files.map(async (file) => {
@@ -433,20 +464,20 @@ async function editFilesInDirectory(dirPath, searchString, replaceString) {
                       const lines = data.split('\n');
                       let changesFound = false;
 
-                      console.log(`\nFile: ${filePath}`);
-                      console.log(`Found ${matchCount} occurrence(s) of "${searchString}"`);
+                      logMessage(`\nFile: ${filePath}`);
+                      logMessage(`Found ${matchCount} occurrence(s) of "${searchString}"`);
 
                       // Find and display lines that will be changed
                       lines.forEach((line, i) => {
                           if (line.includes(searchString)) {
                               if (!changesFound) {
-                                  console.log('\nChanges:');
+                                logMessage('\nChanges:');
                                   changesFound = true;
                               }
-                              console.log(`Line ${i + 1}:`);
-                              console.log(`- ${line.trim()}`);
-                              console.log(`+ ${line.replace(new RegExp(searchString, 'g'), replaceString).trim()}`);
-                              console.log('-'.repeat(40));
+                              logMessage(`Line ${i + 1}:`);
+                              logMessage(`- ${line.trim()}`);
+                              logMessage(`+ ${line.replace(new RegExp(searchString, 'g'), replaceString).trim()}`);
+                              logMessage('-'.repeat(40));
                           }
                       });
 
@@ -454,27 +485,27 @@ async function editFilesInDirectory(dirPath, searchString, replaceString) {
                       const updatedData = data.replace(new RegExp(searchString, 'g'), replaceString);
                       await fs.promises.writeFile(filePath, updatedData, 'utf8');
 
-                      console.log(`Successfully updated ${matchCount} occurrence(s)`);
+                      logMessage(`Successfully updated ${matchCount} occurrence(s)`);
                       totalReplacements += matchCount;
                       filesModified++;
                   } else {
-                      console.log(`\nFile: ${filePath}`);
-                      console.log('No occurrences found - skipping');
+                      logMessage(`\nFile: ${filePath}`);
+                      logMessage('No occurrences found - skipping');
                   }
               } catch (err) {
-                  console.error(`\nError processing ${filePath}: ${err.message}`);
+                logMessage(`\nError processing ${filePath}: ${err.message}`);
               }
           }
       }));
 
-      console.log('\n' + '='.repeat(50));
-      console.log(`\nSummary:`);
-      console.log(`- Files scanned: ${files.length}`);
-      console.log(`- Files modified: ${filesModified}`);
-      console.log(`- Total replacements: ${totalReplacements}`);
+      logMessage('\n' + '='.repeat(50));
+      logMessage(`\nSummary:`);
+      logMessage(`- Files scanned: ${files.length}`);
+      logMessage(`- Files modified: ${filesModified}`);
+      logMessage(`- Total replacements: ${totalReplacements}`);
 
   } catch (err) {
-      console.error(`\nERROR processing directory ${dirPath}: ${err.message}`);
+    logMessage(`\nERROR processing directory ${dirPath}: ${err.message}`);
   }
 }
 
