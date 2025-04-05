@@ -222,7 +222,7 @@ async function sourceReplace(projectName, projectRoot){
   }
 }
 
-async function pluginInfoReplace(projectRoot, projectDesc) {
+async function pluginInfoReplace(projectRoot, projectName, projectDesc) {
   const config_path = path.join(projectRoot, 'Configs');
   editFilesInDirectory(config_path, "PluginTemplate", projectName);
 
