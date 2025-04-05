@@ -49,8 +49,11 @@ async function main() {
     await sourceReplace(projectName);
     console.log("Done sourceReplace");
 
-    await pluginInfoDescReplace(projectDesc);
-    console.log("Done pluginInfoDescReplace");
+    //await pluginInfoDescReplace(projectDesc);
+    //console.log("Done pluginInfoDescReplace");
+
+    await updatePluginInfo(projectName, projectDesc);
+    console.log("Done updatePluginInfo");
     
     // phase 3: rename files (last step)
     await renameFiles(projectName);
@@ -212,8 +215,7 @@ async function modifyProjectFile(projectName) {
 async function sourceReplace(projectName){
   const files =[
     path.join(projectRoot, 'Source'),
-    path.join(projectRoot, 'Source', 'Public'),
-    path.join(projectRoot, 'Configs')
+    path.join(projectRoot, 'Source', 'Public')
   ];
 
   for (const file of files) {
@@ -223,11 +225,53 @@ async function sourceReplace(projectName){
   }
 }
 
-async function pluginInfoDescReplace(projectDesc) {
+async function pluginInfoDescReplaceOld(projectDesc) {
   const config_path = path.join(projectRoot, 'Configs');
   //replace description in PluginInfo.json
   await editFilesInDirectory(config_path, "A Super simple Plugin that actually works", projectDesc);
   
+}
+
+async function updatePluginInfo(projectName, projectDesc) {
+  const pluginInfoPath = path.join(projectRoot, 'Configs', 'PluginInfo.json');
+  
+  if (!fs.existsSync(pluginInfoPath)) {
+    console.log('PluginInfo.json not found - skipping');
+    return;
+  }
+
+  try {
+    // Read and parse the JSON file
+    const data = await fs.promises.readFile(pluginInfoPath, 'utf8');
+    const pluginInfo = JSON.parse(data);
+
+    // Store original values for comparison
+    const original = {
+      FullName: pluginInfo.FullName,
+      Description: pluginInfo.Description
+    };
+
+    // Update the values
+    pluginInfo.FullName = projectName;
+    pluginInfo.Description = projectDesc;
+
+    // Only write if changes were made
+    if (original.FullName !== projectName || original.Description !== projectDesc) {
+      await fs.promises.writeFile(
+        pluginInfoPath,
+        JSON.stringify(pluginInfo, null, 2), // 2-space indentation
+        'utf8'
+      );
+
+      console.log('Successfully updated PluginInfo.json:');
+      console.log(`- FullName: "${original.FullName}" → "${projectName}"`);
+      console.log(`- Description: "${original.Description}" → "${projectDesc}"`);
+    } else {
+      console.log('No changes needed in PluginInfo.json');
+    }
+  } catch (err) {
+    console.error('Error updating PluginInfo.json:', err.message);
+  }
 }
 
 // has errors try to find new code
