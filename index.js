@@ -49,8 +49,11 @@ async function main() {
     await sourceReplace(projectName, projectRoot);
     console.log("Done sourceReplace");
 
-    await pluginInfoReplace(projectRoot, projectName, projectDesc);
+    await pluginInfoReplace(projectRoot, projectName);
     console.log("Done pluginInfoReplace");
+
+    await pluginInfoDescReplace(projectRoot, projectDesc);
+    console.log("Done pluginInfoDescReplace");
     
     // phase 3: rename files (last step)
     await renameFiles(projectName, projectRoot);
@@ -222,10 +225,13 @@ async function sourceReplace(projectName, projectRoot){
   }
 }
 
-async function pluginInfoReplace(projectRoot, projectName, projectDesc) {
+async function pluginInfoReplace(projectRoot, projectName) {
   const config_path = path.join(projectRoot, 'Configs');
   await editFilesInDirectory(config_path, "PluginTemplate", projectName);
+}
 
+async function pluginInfoDescReplace(projectRoot, projectDesc) {
+  const config_path = path.join(projectRoot, 'Configs');
   //replace description in PluginInfo.json
   await editFilesInDirectory(config_path, "A Super simple Plugin that actually works", projectDesc);
   
