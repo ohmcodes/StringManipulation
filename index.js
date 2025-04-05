@@ -208,8 +208,8 @@ async function updatePluginInfo(projectName, projectDesc) {
       );
 
       logMessage('Successfully updated PluginInfo.json:');
-      logMessage(`- FullName: "${original.FullName}" → "${projectName}"`);
-      logMessage(`- Description: "${original.Description}" → "${projectDesc}"`);
+      logMessage(`- FullName: "${original.FullName}" => "${projectName}"`);
+      logMessage(`- Description: "${original.Description}" => "${projectDesc}"`);
     } else {
       logMessage('No changes needed in PluginInfo.json');
     }
