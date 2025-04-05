@@ -224,10 +224,10 @@ async function sourceReplace(projectName, projectRoot){
 
 async function pluginInfoReplace(projectRoot, projectName, projectDesc) {
   const config_path = path.join(projectRoot, 'Configs');
-  editFilesInDirectory(config_path, "PluginTemplate", projectName);
+  await editFilesInDirectory(config_path, "PluginTemplate", projectName);
 
   //replace description in PluginInfo.json
-  //editFilesInDirectory(config_path, "A Super simple Plugin that actually works", projectDesc);
+  await editFilesInDirectory(config_path, "A Super simple Plugin that actually works", projectDesc);
   
 }
 
@@ -314,7 +314,7 @@ function replaceLine(content, lineNumber, pattern, replacement) {
   return lines.join('\n');
 }
 
-function editFilesInDirectory(dirPath, searchString, replaceString) {
+async function editFilesInDirectory(dirPath, searchString, replaceString) {
     // Read the contents of the directory
     fs.readdir(dirPath, (err, files) => {
         if (err) {
